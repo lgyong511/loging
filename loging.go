@@ -41,7 +41,7 @@ func (l *Loging) Debug(msg string) {
 		//获取日志字符串
 		// 根据日志输出格式格式化日志
 		// 调用输出目标输出日志
-		l.logOutput(l.format(msg))
+		l.logOutput(l.format(Debug, msg))
 	}
 
 }
@@ -63,8 +63,8 @@ func (l *Loging) getLogCaller() string {
 }
 
 // 返回对应日志级别的字符串
-func (l *Loging) getLevel() string {
-	switch l.LogLeve {
+func (l *Loging) getLevel(level Level) string {
+	switch level {
 	case All:
 		return "all"
 	case Trace:
@@ -85,11 +85,11 @@ func (l *Loging) getLevel() string {
 }
 
 // 根据配置拼接日志字符串
-func (l *Loging) format(msg string) string {
+func (l *Loging) format(level Level, msg string) string {
 	//map
 	log := make(map[string]string)
 	//把日志级别保存到map
-	log["level"] = l.getLevel()
+	log["level"] = l.getLevel(level)
 	// 判断是否需要文件名、行号、函数名
 	if l.LogCaller {
 		// 将文件名、行号、函数名保存到map
