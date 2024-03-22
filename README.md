@@ -4,8 +4,8 @@
 日期：年月日时分秒，可自定义日期格式。  
 内容：msg的值和自定义kv。  
 级别：debug、info、warn、error、fatal。  
-文件名称：可选。  
-函数名称：可选。  
+文件名、行号、函数名：可选。  
+ 
 
 ## 日志输出格式
 json格式:{"level":"debug","msg":"read username","time":"2024-03-19T16:06:06+08:00","username":"lgyong"}。  
