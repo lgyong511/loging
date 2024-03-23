@@ -18,33 +18,46 @@ type Config struct {
 	LogCaller  bool        // 文件名、行号、函数名
 }
 
+// 日志信息
 type Loging struct {
 	Config
+	logMap  map[string]string //保存日志信息
+	logByte []byte            //根据配置序列化后的日志信息
+	skip    int               //记录函数栈调用次数
 }
+
+//---------------------------可以导出函数开始---------------------------
 
 func Default() *Loging {
 	return &Loging{Config{
-		LogLeve:    Info,
+		LogLeve:    All,
 		TimeFormat: "2006-01-02 15:03:04",
 		LogFormat:  Json,
 		LogOutput:  []io.Writer{os.Stdout},
-		LogCaller:  false,
-	}}
+		LogCaller:  true,
+	}, nil, nil, 0}
 }
 
 func NewLoging(config *Config) *Loging {
-	return &Loging{*config}
+	return &Loging{*config, nil, nil, 0}
 }
 
 func (l *Loging) Debug(msg string) {
-	if l.LogLeve > Debug {
-		//获取日志字符串
-		// 根据日志输出格式格式化日志
-		// 调用输出目标输出日志
-		l.logOutput(l.format(Debug, msg))
+	l.skip++
+	if l.LogLeve <= Debug {
+		l.initMap().format(Debug, msg).logOutput()
 	}
 
+	// 重置日志信息
+	l.logByte = nil
+	l.logMap = nil
+	l.skip = 0
+
 }
+
+//---------------------------可以导出函数结束---------------------------
+
+//---------------------------不可导出函数开始---------------------------
 
 // 根据配置中的时间格式获取当前时间
 func (l *Loging) getTime() string {
@@ -52,14 +65,21 @@ func (l *Loging) getTime() string {
 }
 
 // 获取日志所在文件名、行号、函数名。
-func (l *Loging) getLogCaller() string {
-	// 获取调用栈标识符、带路径的完整文件名、该调用在文件中的行号。如果无法获得信息，ok会被设为false。
-	pc, file, line, ok := runtime.Caller(3)
-	if !ok {
-		return ""
+func (l *Loging) getLogCaller() {
+	l.skip++
+
+	// 判断是否需要文件名、行号、函数名
+	if l.LogCaller {
+		// 将文件名、行号、函数名保存到map
+		// 获取调用栈标识符、带路径的完整文件名、该调用在文件中的行号。如果无法获得信息，ok会被设为false。
+		pc, file, line, ok := runtime.Caller(l.skip)
+		if ok {
+			funcName := runtime.FuncForPC(pc).Name()
+			l.logMap["file"] = fmt.Sprintf("%s:%d", file, line)
+			l.logMap["func"] = funcName
+		}
 	}
-	funcName := runtime.FuncForPC(pc).Name()
-	return fmt.Sprintf("%s %d %s\n", file, line, funcName)
+
 }
 
 // 返回对应日志级别的字符串
@@ -85,42 +105,65 @@ func (l *Loging) getLevel(level Level) string {
 }
 
 // 根据配置拼接日志字符串
-func (l *Loging) format(level Level, msg string) string {
-	//map
-	log := make(map[string]string)
+func (l *Loging) format(level Level, msg string) *Loging {
+	l.skip++
 	//把日志级别保存到map
-	log["level"] = l.getLevel(level)
-	// 判断是否需要文件名、行号、函数名
-	if l.LogCaller {
-		// 将文件名、行号、函数名保存到map
-		log["caller"] = l.getLogCaller()
-	}
+	l.logMap["level"] = l.getLevel(level)
+
+	// // 判断是否需要文件名、行号、函数名
+	// if l.LogCaller {
+	// 	// 将文件名、行号、函数名保存到map
+	// 	l.logMap["caller"] = l.getLogCaller()
+	// }
+
+	l.getLogCaller()
+
 	// 将消息内容保存到map
-	log["msg"] = msg
+	l.logMap["msg"] = msg
 	// 将时间保存到map
-	log["time"] = l.getTime()
+	l.logMap["time"] = l.getTime()
 
 	// 返回json串
 	if l.LogFormat == Json {
 		// 将map序列化成json串
-		b, err := json.Marshal(log)
+		var err error
+		l.logByte, err = json.Marshal(l.logMap)
 		if err != nil {
-			return ""
+			return l
 		}
-		return string(b)
+		// 追加换行
+		b := []byte("\n")
+		l.logByte = append(l.logByte, b...)
+		return l
 	} else { //返回text串
 		str := ""
-		for k, v := range log {
-			str += k + "=" + v
+		for k, v := range l.logMap {
+			str += k + "=" + `"` + v + `"`
 			str += " "
 		}
-		return str
+		// 追加换行
+		str += "\n"
+		l.logByte = []byte(str)
+		return l
 	}
+
 }
 
 // 输出日志
-func (l *Loging) logOutput(log string) {
+func (l *Loging) logOutput() {
 	for _, w := range l.LogOutput {
-		w.Write([]byte(log))
+		w.Write(l.logByte)
 	}
 }
+
+// 初始化map
+func (l *Loging) initMap() *Loging {
+	// 判断map是否初始化
+	if l.logMap == nil {
+		// 初始化map
+		l.logMap = make(map[string]string)
+	}
+	return l
+}
+
+//---------------------------不可导出函数结束---------------------------
