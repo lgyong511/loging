@@ -28,6 +28,7 @@ type Loging struct {
 
 //---------------------------可以导出函数开始---------------------------
 
+// 创建一个默认配置的Loging实例
 func Default() *Loging {
 	return &Loging{Config{
 		LogLeve:    All,
@@ -38,26 +39,112 @@ func Default() *Loging {
 	}, nil, nil, 0}
 }
 
+// 创建一个指定配置信息的Loging实例
 func NewLoging(config *Config) *Loging {
 	return &Loging{*config, nil, nil, 0}
 }
 
+// 向日志消息自定义一个k/v
+// 如果k和预设的k相同（file,func,level,msg,time），会被覆盖。
+func (l *Loging) WithField(key, value string) *Loging {
+	return l.initMap().addMap(key, value)
+}
+
+// 向日志消息自定义多个k/v
+// 如果k和预设的k相同（file,func,level,msg,time），会被覆盖。
+func (l *Loging) WithFields(m map[string]string) *Loging {
+	l.initMap()
+	for k, v := range m {
+		l.addMap(k, v)
+	}
+
+	return l
+}
+
+// Trace级别日志
+func (l *Loging) Trace(msg string) {
+	defer l.clear()
+
+	l.skip++
+	if l.LogLeve <= Trace {
+		l.initMap().format(Trace, msg).logOutput()
+	}
+
+}
+
+// Debug级别日志
 func (l *Loging) Debug(msg string) {
+	defer l.clear()
+
 	l.skip++
 	if l.LogLeve <= Debug {
 		l.initMap().format(Debug, msg).logOutput()
 	}
 
-	// 重置日志信息
-	l.logByte = nil
-	l.logMap = nil
-	l.skip = 0
+}
 
+// Info级别日志
+func (l *Loging) Info(msg string) {
+	defer l.clear()
+
+	l.skip++
+	if l.LogLeve <= Info {
+		l.initMap().format(Info, msg).logOutput()
+	}
+
+}
+
+// Warn级别日志
+func (l *Loging) Warn(msg string) {
+	defer l.clear()
+
+	l.skip++
+	if l.LogLeve <= Warn {
+		l.initMap().format(Warn, msg).logOutput()
+	}
+
+}
+
+// Error级别日志
+func (l *Loging) Error(msg string) {
+	defer l.clear()
+
+	l.skip++
+	if l.LogLeve <= Error {
+		l.initMap().format(Error, msg).logOutput()
+	}
+
+}
+
+// Fatal级别日志，程序退出返回状态码1
+func (l *Loging) Fatal(msg string) {
+	defer os.Exit(1)
+
+	l.skip++
+	if l.LogLeve <= Fatal {
+		l.initMap().format(Fatal, msg).logOutput()
+	}
+
+	l.clear()
 }
 
 //---------------------------可以导出函数结束---------------------------
 
 //---------------------------不可导出函数开始---------------------------
+
+// 清理日志信息
+func (l *Loging) clear() {
+	// 重置日志信息
+	l.logByte = nil
+	l.logMap = nil
+	l.skip = 0
+}
+
+// 向日志添加一个k/v
+func (l *Loging) addMap(key, value string) *Loging {
+	l.logMap[key] = value
+	return l
+}
 
 // 根据配置中的时间格式获取当前时间
 func (l *Loging) getTime() string {
@@ -75,8 +162,8 @@ func (l *Loging) getLogCaller() {
 		pc, file, line, ok := runtime.Caller(l.skip)
 		if ok {
 			funcName := runtime.FuncForPC(pc).Name()
-			l.logMap["file"] = fmt.Sprintf("%s:%d", file, line)
-			l.logMap["func"] = funcName
+			l.addMap("file", fmt.Sprintf("%s:%d", file, line))
+			l.addMap("func", funcName)
 		}
 	}
 
@@ -108,20 +195,14 @@ func (l *Loging) getLevel(level Level) string {
 func (l *Loging) format(level Level, msg string) *Loging {
 	l.skip++
 	//把日志级别保存到map
-	l.logMap["level"] = l.getLevel(level)
-
-	// // 判断是否需要文件名、行号、函数名
-	// if l.LogCaller {
-	// 	// 将文件名、行号、函数名保存到map
-	// 	l.logMap["caller"] = l.getLogCaller()
-	// }
+	l.addMap("level", l.getLevel(level))
 
 	l.getLogCaller()
 
 	// 将消息内容保存到map
-	l.logMap["msg"] = msg
+	l.addMap("msg", msg)
 	// 将时间保存到map
-	l.logMap["time"] = l.getTime()
+	l.addMap("time", l.getTime())
 
 	// 返回json串
 	if l.LogFormat == Json {
