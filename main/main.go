@@ -15,7 +15,7 @@ func logDefault() {
 
 func logConfig() {
 
-	file, err := os.OpenFile("./dame.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 644)
+	file, err := os.OpenFile("./dame.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		file = os.Stdout
 	}
