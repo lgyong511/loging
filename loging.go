@@ -32,7 +32,7 @@ type Loging struct {
 func Default() *Loging {
 	return &Loging{Config{
 		LogLeve:    All,
-		TimeFormat: "2006-01-02 15:03:04",
+		TimeFormat: "2006-01-02 15:04:05",
 		LogFormat:  Json,
 		LogOutput:  []io.Writer{os.Stdout},
 		LogCaller:  true,
