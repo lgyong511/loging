@@ -20,7 +20,7 @@ type Config struct {
 
 // 日志信息
 type Loging struct {
-	Config
+	config  *Config
 	logMap  map[string]string //保存日志信息
 	logByte []byte            //根据配置序列化后的日志信息
 	skip    int               //记录函数栈调用次数
@@ -30,7 +30,7 @@ type Loging struct {
 
 // 创建一个默认配置的Loging实例
 func Default() *Loging {
-	return &Loging{Config{
+	return &Loging{&Config{
 		LogLeve:    All,
 		TimeFormat: "2006-01-02 15:04:05",
 		LogFormat:  Json,
@@ -41,7 +41,7 @@ func Default() *Loging {
 
 // 创建一个指定配置信息的Loging实例
 func NewLoging(config *Config) *Loging {
-	return &Loging{*config, nil, nil, 0}
+	return &Loging{config, nil, nil, 0}
 }
 
 // 向日志消息自定义一个k/v
@@ -66,7 +66,7 @@ func (l *Loging) Trace(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.LogLeve <= Trace {
+	if l.config.LogLeve <= Trace {
 		l.initMap().format(Trace, msg).logOutput()
 	}
 
@@ -77,7 +77,7 @@ func (l *Loging) Debug(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.LogLeve <= Debug {
+	if l.config.LogLeve <= Debug {
 		l.initMap().format(Debug, msg).logOutput()
 	}
 
@@ -88,7 +88,7 @@ func (l *Loging) Info(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.LogLeve <= Info {
+	if l.config.LogLeve <= Info {
 		l.initMap().format(Info, msg).logOutput()
 	}
 
@@ -99,7 +99,7 @@ func (l *Loging) Warn(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.LogLeve <= Warn {
+	if l.config.LogLeve <= Warn {
 		l.initMap().format(Warn, msg).logOutput()
 	}
 
@@ -110,7 +110,7 @@ func (l *Loging) Error(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.LogLeve <= Error {
+	if l.config.LogLeve <= Error {
 		l.initMap().format(Error, msg).logOutput()
 	}
 
@@ -121,7 +121,7 @@ func (l *Loging) Fatal(msg string) {
 	defer os.Exit(1)
 
 	l.skip++
-	if l.LogLeve <= Fatal {
+	if l.config.LogLeve <= Fatal {
 		l.initMap().format(Fatal, msg).logOutput()
 	}
 
@@ -148,7 +148,7 @@ func (l *Loging) addMap(key, value string) *Loging {
 
 // 根据配置中的时间格式获取当前时间
 func (l *Loging) getTime() string {
-	return time.Now().Format(l.TimeFormat)
+	return time.Now().Format(l.config.TimeFormat)
 }
 
 // 获取日志所在文件名、行号、函数名。
@@ -156,7 +156,7 @@ func (l *Loging) getLogCaller() {
 	l.skip++
 
 	// 判断是否需要文件名、行号、函数名
-	if l.LogCaller {
+	if l.config.LogCaller {
 		// 将文件名、行号、函数名保存到map
 		// 获取调用栈标识符、带路径的完整文件名、该调用在文件中的行号。如果无法获得信息，ok会被设为false。
 		pc, file, line, ok := runtime.Caller(l.skip)
@@ -205,7 +205,7 @@ func (l *Loging) format(level Level, msg string) *Loging {
 	l.addMap("time", l.getTime())
 
 	// 返回json串
-	if l.LogFormat == Json {
+	if l.config.LogFormat == Json {
 		// 将map序列化成json串
 		var err error
 		l.logByte, err = json.Marshal(l.logMap)
@@ -232,7 +232,7 @@ func (l *Loging) format(level Level, msg string) *Loging {
 
 // 输出日志
 func (l *Loging) logOutput() {
-	for _, w := range l.LogOutput {
+	for _, w := range l.config.LogOutput {
 		w.Write(l.logByte)
 	}
 }
