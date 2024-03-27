@@ -148,7 +148,11 @@ func (l *Loging) addMap(key, value string) *Loging {
 
 // 根据配置中的时间格式获取当前时间
 func (l *Loging) getTime() string {
-	return time.Now().Format(l.config.TimeFormat)
+	if l.config.TimeFormat == "" {
+		return time.Now().String()
+	} else {
+		return time.Now().Format(l.config.TimeFormat)
+	}
 }
 
 // 获取日志所在文件名、行号、函数名。
