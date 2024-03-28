@@ -28,7 +28,7 @@ type Loging struct {
 
 //---------------------------可以导出函数开始---------------------------
 
-// 创建一个默认配置的Loging实例
+// 创建默认配置的Loging实例
 func Default() *Loging {
 	return &Loging{&Config{
 		LogLeve:    All,
@@ -39,18 +39,18 @@ func Default() *Loging {
 	}, nil, nil, 0}
 }
 
-// 创建一个指定配置信息的Loging实例
+// 创建Loging实例
 func NewLoging(config *Config) *Loging {
 	return &Loging{config, nil, nil, 0}
 }
 
-// 向日志消息自定义一个k/v
+// 自定义一个k/v日志消息
 // 如果k和预设的k相同（file,func,level,msg,time），会被覆盖。
 func (l *Loging) WithField(key, value string) *Loging {
 	return l.initMap().addMap(key, value)
 }
 
-// 向日志消息自定义多个k/v
+// 自定义多个k/v日志消息
 // 如果k和预设的k相同（file,func,level,msg,time），会被覆盖。
 func (l *Loging) WithFields(m map[string]string) *Loging {
 	l.initMap()
@@ -118,14 +118,14 @@ func (l *Loging) Error(msg string) {
 
 // Fatal级别日志，程序退出返回状态码1
 func (l *Loging) Fatal(msg string) {
-	defer os.Exit(1)
+	defer l.clear()
 
 	l.skip++
 	if l.config.LogLeve <= Fatal {
 		l.initMap().format(Fatal, msg).logOutput()
 	}
+	os.Exit(1)
 
-	l.clear()
 }
 
 //---------------------------可以导出函数结束---------------------------
@@ -140,7 +140,7 @@ func (l *Loging) clear() {
 	l.skip = 0
 }
 
-// 向日志添加一个k/v
+// 向日志map添加一个k/v
 func (l *Loging) addMap(key, value string) *Loging {
 	l.logMap[key] = value
 	return l
@@ -148,14 +148,15 @@ func (l *Loging) addMap(key, value string) *Loging {
 
 // 根据配置中的时间格式获取当前时间
 func (l *Loging) getTime() string {
-	if l.config.TimeFormat == "" {
+	// 如果l.config.TimeFormat为空使用默认时间格式
+	if len(l.config.TimeFormat) == 0 {
 		return time.Now().String()
 	} else {
 		return time.Now().Format(l.config.TimeFormat)
 	}
 }
 
-// 获取日志所在文件名、行号、函数名。
+// 获取日志函数（Debug、Info、Error等）所在文件名、行号、函数名。
 func (l *Loging) getLogCaller() {
 	l.skip++
 
@@ -191,7 +192,7 @@ func (l *Loging) getLevel(level Level) string {
 	case Fatal:
 		return "fatal"
 	default:
-		return ""
+		return "all"
 	}
 }
 
