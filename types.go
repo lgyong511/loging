@@ -5,13 +5,13 @@ type Level int
 
 // 日志级别常量
 const (
-	All   Level = iota //所有日志
-	Trace              //痕迹信息
-	Debug              //调试信息
-	Info               //运行过程
-	Warn               //警告信息，不影响运行
-	Error              //错误信息，影响运行
-	Fatal              //严重错误，会导致程序退出
+	LogAll   Level = iota //所有日志
+	LogTrace              //痕迹信息
+	LogDebug              //调试信息
+	LogInfo               //运行过程
+	LogWarn               //警告信息，不影响运行
+	LogError              //错误信息，影响运行
+	LogFatal              //严重错误，会导致程序退出
 )
 
 // 日志输出格式

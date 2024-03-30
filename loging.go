@@ -31,7 +31,7 @@ type Loging struct {
 // 创建默认配置的Loging实例
 func Default() *Loging {
 	return &Loging{&Config{
-		LogLeve:    Info,
+		LogLeve:    LogInfo,
 		TimeFormat: "2006-01-02 15:04:05",
 		LogFormat:  Json,
 		LogOutput:  []io.Writer{os.Stdout},
@@ -71,8 +71,8 @@ func (l *Loging) Trace(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Trace {
-		l.initMap().format(Trace, msg).logOutput()
+	if l.config.LogLeve <= LogTrace {
+		l.initMap().format(LogTrace, msg).logOutput()
 	}
 
 }
@@ -82,8 +82,8 @@ func (l *Loging) Debug(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Debug {
-		l.initMap().format(Debug, msg).logOutput()
+	if l.config.LogLeve <= LogDebug {
+		l.initMap().format(LogDebug, msg).logOutput()
 	}
 
 }
@@ -93,8 +93,8 @@ func (l *Loging) Info(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Info {
-		l.initMap().format(Info, msg).logOutput()
+	if l.config.LogLeve <= LogInfo {
+		l.initMap().format(LogInfo, msg).logOutput()
 	}
 
 }
@@ -104,8 +104,8 @@ func (l *Loging) Warn(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Warn {
-		l.initMap().format(Warn, msg).logOutput()
+	if l.config.LogLeve <= LogWarn {
+		l.initMap().format(LogWarn, msg).logOutput()
 	}
 
 }
@@ -115,8 +115,8 @@ func (l *Loging) Error(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Error {
-		l.initMap().format(Error, msg).logOutput()
+	if l.config.LogLeve <= LogError {
+		l.initMap().format(LogError, msg).logOutput()
 	}
 
 }
@@ -126,8 +126,8 @@ func (l *Loging) Fatal(msg string) {
 	defer l.clear()
 
 	l.skip++
-	if l.config.LogLeve <= Fatal {
-		l.initMap().format(Fatal, msg).logOutput()
+	if l.config.LogLeve <= LogFatal {
+		l.initMap().format(LogFatal, msg).logOutput()
 	}
 	os.Exit(1)
 
@@ -182,19 +182,19 @@ func (l *Loging) getLogCaller() {
 // 返回对应日志级别的字符串
 func (l *Loging) getLevel(level Level) string {
 	switch level {
-	case All:
+	case LogAll:
 		return "all"
-	case Trace:
+	case LogTrace:
 		return "tracd"
-	case Debug:
+	case LogDebug:
 		return "debug"
-	case Info:
+	case LogInfo:
 		return "info"
-	case Warn:
+	case LogWarn:
 		return "warn"
-	case Error:
+	case LogError:
 		return "error"
-	case Fatal:
+	case LogFatal:
 		return "fatal"
 	default:
 		return "all"
