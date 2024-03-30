@@ -31,7 +31,7 @@ type Loging struct {
 // 创建默认配置的Loging实例
 func Default() *Loging {
 	return &Loging{&Config{
-		LogLeve:    All,
+		LogLeve:    Info,
 		TimeFormat: "2006-01-02 15:04:05",
 		LogFormat:  Json,
 		LogOutput:  []io.Writer{os.Stdout},
@@ -42,6 +42,11 @@ func Default() *Loging {
 // 创建Loging实例
 func NewLoging(config *Config) *Loging {
 	return &Loging{config, nil, nil, 0}
+}
+
+// 更新配置信息
+func (l *Loging) UpdateConfig(config *Config) {
+	l.config = config
 }
 
 // 自定义一个k/v日志消息
@@ -238,7 +243,9 @@ func (l *Loging) format(level Level, msg string) *Loging {
 // 输出日志
 func (l *Loging) logOutput() {
 	for _, w := range l.config.LogOutput {
-		w.Write(l.logByte)
+		if _, err := w.Write(l.logByte); err != nil {
+			fmt.Fprintf(os.Stderr, "写入日志失败!, %v\n", err)
+		}
 	}
 }
 
